@@ -398,19 +398,21 @@ impl Library {
                             use self::Type::*;
                             if let Union(mut u) = try!(self.read_union(parser, ns_id, attrs)) {
                                 for f in &mut u.fields {
-                                // TODO: Broken here?
-                                    if f.name.is_empty() || f.name == "" {
-                                        f.name = format!("_{}",u.name);
+                                    if f.c_type.is_none() {
+                                        f.c_type = Some(format!("{}_s",u.c_type.as_ref().unwrap()));
                                     }
-                                    println!("{} : Name = {}, Type = {:?}", u.name, f.name, f.typ);
                                 }
+                                
+                                let ctype = u.c_type.clone();
                                 let u_doc = u.doc.clone();
                                 let type_id = Type::union(self, u);
                                 fields.push(Field {
+                                    name: "u".to_string(), //TODO make "u" or none if c_type is none
                                     typ: type_id,
                                     doc: u_doc,
+                                    c_type: ctype,
                                     ..Field::default()
-                                });                                 
+                                });
                             };
                         }
                         "field" => {
@@ -478,6 +480,7 @@ impl Library {
                 .by_name("type")
                 .ok_or_else(|| mk_error!("Missing c:type attribute", parser))
         );
+        let c_type = format!("{}_u",c_type);
         
         let mut fields = Vec::new();
         let mut fns = Vec::new();
@@ -504,12 +507,18 @@ impl Library {
                         }
                         "record" => {
                             use self::Type::*;
-                            if let Record(r) = try!(self.read_record(parser, ns_id, attrs)) {
+                            if let Record(mut r) = try!(self.read_record(parser, ns_id, attrs)) {
+                                r.name = format!("{}_s",c_type);
+                                r.c_type = format!("{}_s",c_type);
+                                
+                                let ctype = Some(r.c_type.clone());
                                 let r_doc = r.doc.clone();
                                 let type_id = Type::record(self, r);
                                 fields.push(Field {
+                                    name: "s".to_string(), //TODO make "s" or blank
                                     typ: type_id,
                                     doc: r_doc,
+                                    c_type: ctype,
                                     ..Field::default()
                                 });                                 
                             };

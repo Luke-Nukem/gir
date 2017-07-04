@@ -548,7 +548,7 @@ impl Type {
             functions       : u.functions,
             doc             : u.doc,
         });
-        library.add_type(INTERNAL_NAMESPACE, &format!("#{:?}", field_tids), typ)
+        library.add_type(MAIN_NAMESPACE, &format!("#{:?}", field_tids), typ)
     }
     
     pub fn record(library: &mut Library, r: Record) -> TypeId {
@@ -565,7 +565,7 @@ impl Type {
             doc             : r.doc,
             doc_deprecated  : r.doc_deprecated,
         });
-        library.add_type(INTERNAL_NAMESPACE, &format!("#{:?}", field_tids), typ)
+        library.add_type(MAIN_NAMESPACE, &format!("#{:?}", field_tids), typ)
     }
 }
 

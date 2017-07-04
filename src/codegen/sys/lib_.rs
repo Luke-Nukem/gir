@@ -436,6 +436,7 @@ fn generate_records(w: &mut Write, env: &Env, records: &[&Record]) -> Result<()>
 
         let comment = if commented { "//" } else { "" };
         if lines.is_empty() {
+            println!("RECORD LINE = {}", record.c_type);
             try!(writeln!(
                 w,
                 "{}#[repr(C)]\n{0}pub struct {}(c_void);\n",
@@ -479,7 +480,7 @@ fn generate_fields(env: &Env, struct_name: &str, fields: &[Field]) -> (Vec<Strin
     let mut lines = Vec::new();
     let mut commented = false;
     let mut truncated = false;
-
+    
     //TODO: remove after GObject-2.0.gir fixed
     // Fix for wrong GValue size on i686-pc-windows-gnu due `c:type="gpointer"` in data field
     // instead guint64
@@ -489,6 +490,8 @@ fn generate_fields(env: &Env, struct_name: &str, fields: &[Field]) -> (Vec<Strin
     let is_gweakref = env.config.library_name == "GObject" && struct_name == "WeakRef";
 
     'fields: for field in fields {
+        println!("FIELD NAME = {}", field.name);
+        println!("FIELD C_TYPE = {:?}", field.c_type);
         let is_union = env.library
             .type_(field.typ)
             .maybe_ref_as::<Union>()
