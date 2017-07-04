@@ -594,10 +594,8 @@ fn generate_fields(env: &Env, struct_name: &str, fields: &[Field]) -> (Vec<Strin
                     commented = true;
                 }
                 lines.push(format!("\tpub {}: {},", name, c_type.into_string()));
-            } else if is_union && name == "GVariantBuilder" {
-                println!("KLAXON: {:?}", struct_name);
             } else {
-                println!("KLAXON: field.name={:?}, field.typ={:?}, full_name={:?}", name, field.typ, field.typ.full_name(&env.library));
+                warn!("{} is not kosher", name);
                 lines.push(format!(
                     "\tpub {}: [{:?} {}],",
                     field.name,

@@ -538,20 +538,32 @@ impl Type {
         library.add_type(INTERNAL_NAMESPACE, &format!("fn<#{:?}>", param_tids), typ)
     }
 
-    pub fn union(library: &mut Library, fields: Vec<Field>) -> TypeId {
+    pub fn union(library: &mut Library, u: Union) -> TypeId {
+        let fields = u.fields;
         let field_tids: Vec<TypeId> = fields.iter().map(|f| f.typ).collect();
         let typ = Type::Union(Union {
-            fields: fields,
-            ..Union::default()
+            name            : u.name,
+            c_type          : u.c_type,
+            fields          : fields,
+            functions       : u.functions,
+            doc             : u.doc,
         });
         library.add_type(INTERNAL_NAMESPACE, &format!("#{:?}", field_tids), typ)
     }
     
-    pub fn record(library: &mut Library, fields: Vec<Field>) -> TypeId {
+    pub fn record(library: &mut Library, r: Record) -> TypeId {
+        let fields = r.fields;
         let field_tids: Vec<TypeId> = fields.iter().map(|f| f.typ).collect();
         let typ = Type::Record(Record {
-            fields: fields,
-            ..Record::default()
+            name            : r.name,
+            c_type          : r.c_type,
+            glib_get_type   : r.glib_get_type,
+            fields          : fields,
+            functions       : r.functions,
+            version         : r.version,
+            deprecated_version: r.deprecated_version,
+            doc             : r.doc,
+            doc_deprecated  : r.doc_deprecated,
         });
         library.add_type(INTERNAL_NAMESPACE, &format!("#{:?}", field_tids), typ)
     }
