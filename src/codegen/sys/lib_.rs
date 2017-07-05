@@ -319,7 +319,8 @@ fn generate_unions(w: &mut Write, env: &Env, items: &[&Union]) -> Result<()> {
 
     for item in items {
         if let Some(ref c_type) = item.c_type {
-            if cfg!(feature = "use_unions") {
+            #[cfg(feature = "use_unions")]
+            {
                 let (lines, commented) = generate_fields(env, &item.name, &item.fields);
 
                 let comment = if commented { "//" } else { "" };
@@ -344,7 +345,8 @@ fn generate_unions(w: &mut Write, env: &Env, items: &[&Union]) -> Result<()> {
                     try!(writeln!(w, "{}}}\n", comment));
                 }
             }
-            if !cfg!(feature = "use_unions") {
+            #[cfg(not(feature = "use_unions"))]
+            {
                 // TODO: GLib/GObject special cases until we have proper union support in Rust
                 if env.config.library_name == "GLib" && c_type == "GMutex" {
                     // Two c_uint or a pointer => 64 bits on all platforms currently
@@ -487,6 +489,7 @@ fn generate_fields(env: &Env, struct_name: &str, fields: &[Field]) -> (Vec<Strin
     //TODO: remove after GObject-2.0.gir fixed
     // Fix for wrong GValue size on i686-pc-windows-gnu due `c:type="gpointer"` in data field
     // instead guint64
+    #[cfg(not(feature = "use_unions"))]
     let is_gvalue = env.config.library_name == "GObject" && struct_name == "Value";
 
     // TODO: GLib/GObject special cases until we have proper union support in Rust
@@ -570,11 +573,12 @@ fn generate_fields(env: &Env, struct_name: &str, fields: &[Field]) -> (Vec<Strin
 
         if let Some(ref c_type) = field.c_type {
             let name = mangle_keywords(&*field.name);
-            let mut c_type = ffi_type(env, field.typ, c_type);
+            let c_type = ffi_type(env, field.typ, c_type);
             if c_type.is_err() {
                 commented = true;
             }
-            if !cfg!(feature = "use_unions") {
+            #[cfg(not(feature = "use_unions"))]
+            {
                 if is_gvalue && field.name == "data" {
                     c_type = Ok("[u64; 2]".to_owned());
                 }

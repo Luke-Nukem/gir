@@ -16,7 +16,7 @@ There are two main modes of generation for `gir`; *FFI* and *API*.
 
 The *FFI* mode is what creates the low-level FFI bindings from the supplied `*.gir` file - these are essentially direct calls in to the related C library and are typically unsafe. The resulting crate is typically appended with `-sys`.
 
-The *API* mode generates another crate for a layer on top of these unsafe (*sys*) bindings whihc makes them safe for use in general Rust.
+The *API* mode generates another crate for a layer on top of these unsafe (*sys*) bindings which makes them safe for use in general Rust.
 
 ### The FFI mode TOML config
 

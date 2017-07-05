@@ -152,11 +152,7 @@ impl Library {
                             try!(self.read_class(parser, ns_id, &attributes));
                         }
                         "record" => {
-                            //if cfg!(feature = "use_unions") {
-                                try!(self.read_record_start(parser, ns_id, &attributes));
-                            //} else {
-                            //    try!(self.read_record(parser, ns_id, &attributes));
-                            //};
+                            try!(self.read_record_start(parser, ns_id, &attributes));
                         }
                         "union" => {
                             try!(self.read_named_union(parser, ns_id, &attributes));
@@ -388,8 +384,8 @@ impl Library {
                                     for f in &mut u.fields {
                                         if f.c_type.is_none() {
                                             nested = true;
-                                            u.name = format!("{}_u{}", c_type, union_count);
-                                            u.c_type = Some(format!("{}_u{}", c_type, union_count));
+                                            u.name = format!("{}_u{}",c_type,union_count);
+                                            u.c_type = Some(format!("{}_u{}",c_type,union_count));
                                         }
                                     }
                                     let ctype = u.c_type.clone();
@@ -532,7 +528,6 @@ impl Library {
         let mut fns = Vec::new();
         let mut doc = None;
         let mut struct_count = 1;
-//        let c_type = format!("{}_u",c_type);
         loop {
             let event = try!(parser.next());
             match event {
