@@ -267,10 +267,6 @@ impl Library {
                         "union" => {
                             use self::Type::*;
                             if let Union(u) = try!(self.read_union(parser, ns_id, attrs)) {
-                                println!("FOUND NESTED UNION - name={:?}", u.name);
-                                for f in &u.fields {
-                                    println!("Field Name = {:?}", f.name);
-                                }
                                 let u_doc = u.doc.clone();
                                 let type_id = Type::union(self, u);
                                 fields.push(Field {
