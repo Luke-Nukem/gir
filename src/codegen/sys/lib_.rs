@@ -321,7 +321,7 @@ fn generate_unions(w: &mut Write, env: &Env, items: &[&Union]) -> Result<()> {
         if let Some(ref c_type) = item.c_type {
             if cfg!(feature = "use_unions") {
                 let (lines, commented) = generate_fields(env, &item.name, &item.fields);
-                
+
                 let comment = if commented { "//" } else { "" };
                 if lines.is_empty() {
                     try!(writeln!(
@@ -483,7 +483,7 @@ fn generate_fields(env: &Env, struct_name: &str, fields: &[Field]) -> (Vec<Strin
     let mut commented = false;
     #[cfg(not(feature = "use_unions"))]
     let mut truncated = false;
-    
+
     //TODO: remove after GObject-2.0.gir fixed
     // Fix for wrong GValue size on i686-pc-windows-gnu due `c:type="gpointer"` in data field
     // instead guint64

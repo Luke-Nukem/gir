@@ -358,6 +358,7 @@ impl Library {
         let mut fns = Vec::new();
         let mut doc = None;
         let mut doc_deprecated = None;
+        let mut union_count = 1;
         loop {
             let event = try!(parser.next());
             match event {
@@ -387,9 +388,8 @@ impl Library {
                                     for f in &mut u.fields {
                                         if f.c_type.is_none() {
                                             nested = true;
-                                            f.c_type = Some(format!("{}_s",u.c_type
-                                                                            .as_ref()
-                                                                            .unwrap()));
+                                            u.name = format!("{}_u{}", c_type, union_count);
+                                            u.c_type = Some(format!("{}_u{}", c_type, union_count));
                                         }
                                     }
                                     let ctype = u.c_type.clone();
@@ -397,8 +397,7 @@ impl Library {
                                     let type_id = Type::union(self, u);
                                     if nested {
                                         fields.push(Field {
-                                            //TODO make "u" or none if no c_type
-                                            name: "u".to_string(),
+                                            name: format!("u{}", union_count),
                                             typ: type_id,
                                             doc: u_doc,
                                             c_type: ctype,
@@ -411,6 +410,7 @@ impl Library {
                                             ..Field::default()
                                         });
                                     }
+                                    union_count += 1;
                                 };
                             }
                             #[cfg(not(feature = "use_unions"))]
@@ -439,6 +439,7 @@ impl Library {
             }
         }
 
+        // TODO: unsure of how to handle this
         //if attrs.by_name("is-gtype-struct").is_some() {
         //    return Ok(());
         //}
@@ -526,11 +527,12 @@ impl Library {
                 .by_name("type")
                 .ok_or_else(|| mk_error!("Missing c:type attribute", parser))
         );
-        let c_type = format!("{}_u",c_type);
 
         let mut fields = Vec::new();
         let mut fns = Vec::new();
         let mut doc = None;
+        let mut struct_count = 1;
+//        let c_type = format!("{}_u",c_type);
         loop {
             let event = try!(parser.next());
             match event {
@@ -554,20 +556,17 @@ impl Library {
                         "record" => {
                             use self::Type::*;
                             if let Record(mut r) = try!(self.read_record(parser, ns_id, attrs)) {
-                                r.name = format!("{}_s",c_type);
-                                r.c_type = format!("{}_s",c_type);
-                                let ctype = Some(r.c_type.clone());
+                                r.name = format!("{}_s{}",c_type, struct_count);
+                                r.c_type = format!("{}_s{}",c_type, struct_count);
                                 let r_doc = r.doc.clone();
                                 let type_id = Type::record(self, r);
                                 fields.push(Field {
-                                    // TODO: This will cause big issues if the union has more
-                                    // than one struct in it
-                                    name: "s".to_string(),
+                                    name: format!("s{}", struct_count),
                                     typ: type_id,
                                     doc: r_doc,
-                                    c_type: ctype,
                                     ..Field::default()
                                 });
+                                struct_count += 1;
                             };
                         },
                         "doc" => doc = try!(read_text(parser)),
