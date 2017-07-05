@@ -538,6 +538,17 @@ impl Type {
         library.add_type(INTERNAL_NAMESPACE, &format!("fn<#{:?}>", param_tids), typ)
     }
 
+    #[cfg(not(feature = "use_unions"))]
+    pub fn union(library: &mut Library, fields: Vec<Field>) -> TypeId {
+        let field_tids: Vec<TypeId> = fields.iter().map(|f| f.typ).collect();
+        let typ = Type::Union(Union {
+            fields: fields,
+            ..Union::default()
+        });
+        library.add_type(INTERNAL_NAMESPACE, &format!("#{:?}", field_tids), typ)
+    }
+
+    #[cfg(feature = "use_unions")]
     pub fn union(library: &mut Library, u: Union) -> TypeId {
         let fields = u.fields;
         let field_tids: Vec<TypeId> = fields.iter().map(|f| f.typ).collect();
@@ -550,7 +561,8 @@ impl Type {
         });
         library.add_type(MAIN_NAMESPACE, &format!("#{:?}", field_tids), typ)
     }
-    
+
+    #[cfg(feature = "use_unions")]
     pub fn record(library: &mut Library, r: Record) -> TypeId {
         let fields = r.fields;
         let field_tids: Vec<TypeId> = fields.iter().map(|f| f.typ).collect();

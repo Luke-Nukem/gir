@@ -2,7 +2,9 @@ use std::collections::HashMap;
 use std::io::{Result, Write};
 use case::CaseExt;
 
+#[cfg(not(feature = "use_unions"))]
 use analysis::c_type::rustify_pointers;
+
 use codegen::general::{self, version_condition};
 use config::ExternalLibrary;
 use env::Env;
@@ -466,7 +468,8 @@ fn generate_records(w: &mut Write, env: &Env, records: &[&Record]) -> Result<()>
     Ok(())
 }
 
-// TODO: GLib/GObject special cases until we have proper union support in Rust
+// TODO: GLib/GObject special cases unless nightly unions are enabled
+#[cfg(not(feature = "use_unions"))]
 fn is_union_special_case(c_type: &Option<String>) -> bool {
     if let Some(c_type) = c_type.as_ref() {
         c_type.as_str() == "GMutex"
@@ -478,6 +481,7 @@ fn is_union_special_case(c_type: &Option<String>) -> bool {
 fn generate_fields(env: &Env, struct_name: &str, fields: &[Field]) -> (Vec<String>, bool) {
     let mut lines = Vec::new();
     let mut commented = false;
+    #[cfg(not(feature = "use_unions"))]
     let mut truncated = false;
     
     //TODO: remove after GObject-2.0.gir fixed
@@ -489,11 +493,14 @@ fn generate_fields(env: &Env, struct_name: &str, fields: &[Field]) -> (Vec<Strin
     let is_gweakref = env.config.library_name == "GObject" && struct_name == "WeakRef";
 
     'fields: for field in fields {
+        #[cfg(not(feature = "use_unions"))]
         let is_union = env.library
             .type_(field.typ)
             .maybe_ref_as::<Union>()
             .is_some();
+        #[cfg(not(feature = "use_unions"))]
         let is_bits = field.bits.is_some();
+        #[cfg(not(feature = "use_unions"))]
         let is_ptr = {
             if let Some(ref c_type) = field.c_type {
                 !rustify_pointers(c_type).0.is_empty()
@@ -504,27 +511,31 @@ fn generate_fields(env: &Env, struct_name: &str, fields: &[Field]) -> (Vec<Strin
 
         // TODO: Special case for padding unions like used in GStreamer, see e.g.
         // the padding in GstControlBinding
-        if is_union && !truncated {
-            if let Some(union_) = env.library.type_(field.typ).maybe_ref_as::<Union>() {
-                for union_field in &union_.fields {
-                    if union_field.name.contains("reserved") ||
-                        union_field.name.contains("padding")
-                    {
-                        if let Some(ref c_type) = union_field.c_type {
-                            let name = mangle_keywords(&*union_field.name);
-                            let c_type = ffi_type(env, union_field.typ, c_type);
-                            if c_type.is_err() {
-                                commented = true;
+        #[cfg(not(feature = "use_unions"))]
+        {
+            if is_union && !truncated {
+                if let Some(union_) = env.library.type_(field.typ).maybe_ref_as::<Union>() {
+                    for union_field in &union_.fields {
+                        if union_field.name.contains("reserved") ||
+                            union_field.name.contains("padding")
+                        {
+                            if let Some(ref c_type) = union_field.c_type {
+                                let name = mangle_keywords(&*union_field.name);
+                                let c_type = ffi_type(env, union_field.typ, c_type);
+                                if c_type.is_err() {
+                                    commented = true;
+                                }
+                                lines.push(format!("\tpub {}: {},", name, c_type.into_string()));
+                                continue 'fields;
                             }
-                            lines.push(format!("\tpub {}: {},", name, c_type.into_string()));
-                            continue 'fields;
                         }
                     }
                 }
             }
         }
 
-        if !cfg!(feature = "use_unions") {
+        #[cfg(not(feature = "use_unions"))]
+        {
             if !is_gweakref && !truncated && !is_ptr &&
                 (is_union || is_bits) &&
                 !is_union_special_case(&field.c_type)
@@ -569,7 +580,7 @@ fn generate_fields(env: &Env, struct_name: &str, fields: &[Field]) -> (Vec<Strin
                 }
             }
             lines.push(format!("\tpub {}: {},", name, c_type.into_string()));
-        } else if is_gweakref && !cfg!(feature = "use_unions"){
+        } else if is_gweakref && !cfg!(feature = "use_unions") {
             // union containing a single pointer
             lines.push("\tpub priv_: gpointer,".to_owned());
         } else {
@@ -595,10 +606,9 @@ fn generate_fields(env: &Env, struct_name: &str, fields: &[Field]) -> (Vec<Strin
                 }
                 lines.push(format!("\tpub {}: {},", name, c_type.into_string()));
             } else {
-                warn!("{} is not kosher", name);
                 lines.push(format!(
                     "\tpub {}: [{:?} {}],",
-                    field.name,
+                    name,
                     field.typ,
                     field.typ.full_name(&env.library)
                 ));
