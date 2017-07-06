@@ -354,6 +354,7 @@ impl Library {
         let mut fns = Vec::new();
         let mut doc = None;
         let mut doc_deprecated = None;
+        #[cfg(feature = "use_unions")]
         let mut union_count = 1;
         loop {
             let event = try!(parser.next());
@@ -518,11 +519,7 @@ impl Library {
                 .by_name("name")
                 .ok_or_else(|| mk_error!("Missing record name", parser))
         );
-        let c_type = try!(
-            attrs
-                .by_name("type")
-                .ok_or_else(|| mk_error!("Missing c:type attribute", parser))
-        );
+        let c_type = attrs.by_name("type").unwrap_or("");
 
         let mut fields = Vec::new();
         let mut fns = Vec::new();

@@ -489,7 +489,6 @@ fn generate_fields(env: &Env, struct_name: &str, fields: &[Field]) -> (Vec<Strin
     //TODO: remove after GObject-2.0.gir fixed
     // Fix for wrong GValue size on i686-pc-windows-gnu due `c:type="gpointer"` in data field
     // instead guint64
-    #[cfg(not(feature = "use_unions"))]
     let is_gvalue = env.config.library_name == "GObject" && struct_name == "Value";
 
     // TODO: GLib/GObject special cases until we have proper union support in Rust
@@ -573,15 +572,12 @@ fn generate_fields(env: &Env, struct_name: &str, fields: &[Field]) -> (Vec<Strin
 
         if let Some(ref c_type) = field.c_type {
             let name = mangle_keywords(&*field.name);
-            let c_type = ffi_type(env, field.typ, c_type);
+            let mut c_type = ffi_type(env, field.typ, c_type);
             if c_type.is_err() {
                 commented = true;
             }
-            #[cfg(not(feature = "use_unions"))]
-            {
-                if is_gvalue && field.name == "data" {
-                    c_type = Ok("[u64; 2]".to_owned());
-                }
+            if is_gvalue && field.name == "data" {
+                c_type = Ok("[u64; 2]".to_owned());
             }
             lines.push(format!("\tpub {}: {},", name, c_type.into_string()));
         } else if is_gweakref && !cfg!(feature = "use_unions") {
